@@ -1,2 +1,6 @@
 Django==3.2
 pytz==2018.5
+djangorestframework==3.14.0
+Markdown==3.4.1
+psycopg2==2.9.5
+pyyaml==6.0
