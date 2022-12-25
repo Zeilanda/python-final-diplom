@@ -1,10 +1,10 @@
 # import yaml
 # from yaml import load as load_yaml, Loader
 # from django.shortcuts import render
-
-# Create your views here.
+#
+# # Create your views here.
 # from backend.models import Shop, Category, Product, Parameter, ProductParameter
-
+#
 # with open('orders/shop1.yaml') as stream:
 #     data = load_yaml(stream, Loader=Loader)
 #     try:
