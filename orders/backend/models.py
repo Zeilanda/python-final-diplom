@@ -16,22 +16,12 @@ STATE_CHOICES = (
 
 
 class User(AbstractUser):
-    # username_validator = UnicodeUsernameValidator()
+    is_provider = models.BooleanField(default=False)
+    is_buyer = models.BooleanField(default=False)
     email = models.EmailField(_('email address'), unique=True)
-
-    # username = models.CharField(
-    #     _('username'),
-    #     max_length=150,
-    #     help_text=_('Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'),
-    #     validators=[username_validator],
-    #     error_messages={
-    #         'unique': _("A user with that username already exists."),
-    #     },
-    # )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
-    objects = CustomUserManager()
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
@@ -42,8 +32,8 @@ class Customer(models.Model):
     street = models.CharField(max_length=30, verbose_name='Улица', blank=True)
     house = models.CharField(max_length=10, verbose_name='Дом', blank=True)
     phone = models.CharField(max_length=12, verbose_name='Телефон', blank=True)
-    customer = models.ForeignKey(User, verbose_name='Клиент', related_name="user_customer", blank=True,
-                                 on_delete=models.CASCADE)
+    customer = models.OneToOneField(User, verbose_name='Клиент', related_name="user_customer", blank=True,
+                                    on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Покупатель'
@@ -52,18 +42,17 @@ class Customer(models.Model):
 
 
 class Shop(models.Model):
-    name = models.CharField(max_length=50, verbose_name='Название')
+    name = models.CharField(max_length=50, verbose_name='Название', unique=True)
     url = models.URLField(verbose_name='Ссылка', null=True, blank=True)
 
 
 class Provider(models.Model):
-
     company = models.CharField(max_length=30, verbose_name='Компания', blank=True)
     shop = models.ForeignKey(Shop, verbose_name='Магазин', related_name='shop_providers', blank=True,
                              on_delete=models.CASCADE)
     position = models.CharField(max_length=25, verbose_name='Должность', blank=True)
-    provider = models.ForeignKey(User, verbose_name='Поставщик', related_name="user_provider", blank=True,
-                                 on_delete=models.CASCADE)
+    provider = models.OneToOneField(User, verbose_name='Поставщик', related_name="user_provider", blank=True,
+                                    on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Поставщик'

@@ -11,14 +11,6 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
-        # with open('fixtures/books.json', 'r', encoding='utf-8') as json_content:
-        #     books = json.load(json_content)
-        #
-        # for book in books:
-        #     Book.objects.create(name=book['fields']['name'],
-        #                         author=book['fields']['author'],
-        #                         pub_date=book['fields']['pub_date'])
-        #         # TODO: Добавьте сохранение модели
 
         with open('data/shop1.yaml', encoding="UTF-8") as stream:
             data = load_yaml(stream, Loader=Loader)
@@ -27,12 +19,7 @@ class Command(BaseCommand):
 
                 for category in data['categories']:
                     category_object, _ = Category.objects.get_or_create(id=category['id'], name=category['name'])
-                #     category_object.shops.add(shop.id)
-                #     category_object.save()
-                # Product.objects.filter(shop_id=shop.id).delete()
-                # print(shop[0].id)
                 for item in data['goods']:
-                #     print(shop.id)
                     product, _ = Product.objects.get_or_create(external_id=item['id'],
                                                                name=item['name'],
                                                                category_id=item['category'],
@@ -43,10 +30,10 @@ class Command(BaseCommand):
                                                                shop_id=shop[0].id
                                                                )
                 #
-                #     for name, value in item['parameters'].items():
-                #         parameter_object, _ = Parameter.objects.get_or_create(name=name)
-                #         ProductParameter.objects.create(product_id=product.id,
-                #                                         parameter_id=parameter_object.id,
-                #                                         value=value)
+                    for name, value in item['parameters'].items():
+                        parameter_object, _ = Parameter.objects.get_or_create(name=name)
+                        ProductParameter.objects.create(product_id=product.id,
+                                                        parameter_id=parameter_object.id,
+                                                        value=value)
             except yaml.YAMLError as exc:
                 print(exc)

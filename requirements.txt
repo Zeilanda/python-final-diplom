@@ -4,3 +4,5 @@ djangorestframework==3.14.0
 Markdown==3.4.1
 psycopg2==2.9.5
 pyyaml==6.0
+django-rest-auth==0.9.5
+django-allauth==0.52.0
