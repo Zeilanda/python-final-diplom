@@ -3,13 +3,23 @@ from rest_framework import serializers
 from rest_auth.registration.serializers import RegisterSerializer
 
 
-from backend.models import Customer, Provider, Shop
+from backend.models import Customer, Provider, Shop, Category
 
 
 class ShopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shop
         fields = ['id', 'name']
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ('id', 'city', 'street', 'house', 'phone')
+        read_only_fields = ('id',)
+        extra_kwargs = {
+            'user': {'write_only': True}
+        }
 
 
 class CustomerCustomRegistrationSerializer(RegisterSerializer):
@@ -120,3 +130,8 @@ class LoginSerializer(serializers.Serializer):
         }
 
 
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('id', 'name',)
+        read_only_fields = ('id',)
