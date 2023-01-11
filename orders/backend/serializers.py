@@ -15,15 +15,19 @@ class ShopSerializer(serializers.ModelSerializer):
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
-        fields = ('id', 'city', 'street', 'house', 'phone')
-        read_only_fields = ('id',)
-        extra_kwargs = {
-            'user': {'write_only': True}
-        }
+        fields = ['id', 'city', 'street', 'house', 'phone']
+        # fields = "__all__"
+        # # read_only_fields = ('id',)
+        # extra_kwargs = {
+        #     'user': {'write_only': True}
+        # }
 
 
 class CustomerCustomRegistrationSerializer(RegisterSerializer):
     customer = serializers.PrimaryKeyRelatedField(read_only=True, )
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+    username = None
     city = serializers.CharField(required=True)
     street = serializers.CharField(required=True)
     house = serializers.CharField(required=True)
@@ -32,6 +36,8 @@ class CustomerCustomRegistrationSerializer(RegisterSerializer):
     def get_cleaned_data(self):
         data = super(CustomerCustomRegistrationSerializer, self).get_cleaned_data()
         extra_data = {
+            "first_name": self.validated_data.get("first_name", ""),
+            "last_name": self.validated_data.get("last_name", ""),
             "city": self.validated_data.get("city", ""),
             "street": self.validated_data.get("street", ""),
             "house": self.validated_data.get("house", ""),
@@ -44,25 +50,32 @@ class CustomerCustomRegistrationSerializer(RegisterSerializer):
         user = super(CustomerCustomRegistrationSerializer, self).save(request)
         user.is_buyer = True
         user.save()
+        user.first_name = self.cleaned_data.get("first_name")
+        user.last_name = self.cleaned_data.get("last_name")
+        user.save(update_fields=['first_name', 'last_name'])
         customer = Customer(customer=user, city=self.cleaned_data.get("city"),
                             street=self.cleaned_data.get("street"),
                             house=self.cleaned_data.get("house"),
                             phone=self.cleaned_data.get("phone")
                             )
         customer.save()
+
         return user
 
 
 class ProviderCustomRegistrationSerializer(RegisterSerializer):
     provider = serializers.PrimaryKeyRelatedField(read_only=True, )
-    company = serializers.CharField(required=True)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+    username = None
     shop = serializers.CharField(required=True)
     position = serializers.CharField(required=True)
 
     def get_cleaned_data(self):
         data = super(ProviderCustomRegistrationSerializer, self).get_cleaned_data()
         extra_data = {
-            "company": self.validated_data.get("company", ""),
+            "first_name": self.validated_data.get("first_name", ""),
+            "last_name": self.validated_data.get("last_name", ""),
             "shop": self.validated_data.get("shop", ""),
             "position": self.validated_data.get("position", ""),
         }
@@ -73,10 +86,12 @@ class ProviderCustomRegistrationSerializer(RegisterSerializer):
         user = super(ProviderCustomRegistrationSerializer, self).save(request)
         user.is_provider = True
         user.save()
+        user.first_name = self.cleaned_data.get("first_name")
+        user.last_name = self.cleaned_data.get("last_name")
+        user.save(update_fields=['first_name', 'last_name'])
         shop = Shop.objects.get_or_create(name=self.cleaned_data.get("shop"))
         print(shop)
-        provider = Provider(provider=user, company=self.cleaned_data.get("company"),
-                            shop=shop[0],
+        provider = Provider(provider=user, shop=shop[0],
                             position=self.cleaned_data.get("position"),
                             )
         provider.save()

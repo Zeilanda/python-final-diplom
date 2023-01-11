@@ -17,70 +17,15 @@ STATE_CHOICES = (
 )
 
 
-# class UserManager(BaseUserManager):
-#     """
-#     Django требует, чтобы пользовательские `User`
-#     определяли свой собственный класс Manager.
-#     Унаследовав от BaseUserManager, мы получаем много кода,
-#     используемого Django для создания `User`.
-#
-#     Все, что нам нужно сделать, это переопределить функцию
-#     `create_user`, которую мы будем использовать
-#     для создания объектов `User`.
-#     """
-#
-#     def _create_user(self, username, email, password=None, **extra_fields):
-#         if not username:
-#             raise ValueError('Указанное имя пользователя должно быть установлено')
-#
-#         if not email:
-#             raise ValueError('Данный адрес электронной почты должен быть установлен')
-#
-#         email = self.normalize_email(email)
-#         user = self.model(username=username, email=email, **extra_fields)
-#         user.set_password(password)
-#         user.save(using=self._db)
-#
-#         return user
-#
-#     def create_user(self, username, email, password=None, **extra_fields):
-#         """
-#         Создает и возвращает `User` с адресом электронной почты,
-#         именем пользователя и паролем.
-#         """
-#         extra_fields.setdefault('is_staff', False)
-#         extra_fields.setdefault('is_superuser', False)
-#
-#         return self._create_user(username, email, password, **extra_fields)
-#
-#     def create_superuser(self, username, email, password, **extra_fields):
-#         """
-#         Создает и возвращает пользователя с правами
-#         суперпользователя (администратора).
-#         """
-#         extra_fields.setdefault('is_staff', True)
-#         extra_fields.setdefault('is_superuser', True)
-#
-#         if extra_fields.get('is_staff') is not True:
-#             raise ValueError('Суперпользователь должен иметь is_staff=True.')
-#
-#         if extra_fields.get('is_superuser') is not True:
-#             raise ValueError('Суперпользователь должен иметь is_superuser=True.')
-#
-#         return self._create_user(username, email, password, **extra_fields)
-
-
 class User(AbstractUser):
     is_provider = models.BooleanField(default=False)
     is_buyer = models.BooleanField(default=False)
     email = models.EmailField(_('email address'), unique=True)
+    first_name = models.CharField(_('first name'), max_length=150, blank=True)
+    last_name = models.CharField(_('last name'), max_length=150, blank=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
-
-    # Сообщает Django, что класс UserManager, определенный выше,
-    # должен управлять объектами этого типа.
-    # objects = UserManager()
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
@@ -128,7 +73,6 @@ class User(AbstractUser):
             'exp': int(round(dt.timestamp()))
         }, settings.SECRET_KEY, algorithm='HS256')
 
-
         # return token.decode('utf-8')
         # return jwt.decode(token, settings.SECRET_KEY, algorithms="HS256")
         return token
@@ -150,11 +94,10 @@ class Customer(models.Model):
 
 class Shop(models.Model):
     name = models.CharField(max_length=50, verbose_name='Название', unique=True)
-    url = models.URLField(verbose_name='Ссылка', null=True, blank=True)
+    state = models.BooleanField(verbose_name='статус получения заказов', default=True)
 
 
 class Provider(models.Model):
-    company = models.CharField(max_length=30, verbose_name='Компания', blank=True)
     shop = models.ForeignKey(Shop, verbose_name='Магазин', related_name='shop_providers', blank=True,
                              on_delete=models.CASCADE)
     position = models.CharField(max_length=25, verbose_name='Должность', blank=True)
