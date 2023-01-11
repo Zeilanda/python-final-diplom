@@ -10,9 +10,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from backend.models import Category, Shop, Customer, User
+from backend.models import Category, Shop, Customer, User, Provider
 from backend.serializers import (CustomerCustomRegistrationSerializer, ProviderCustomRegistrationSerializer,
-                                 LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer)
+                                 LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer,
+                                 ProviderSerializer)
 
 
 class CustomerRegistrationView(RegisterView):
@@ -86,21 +87,41 @@ class AccountCustomerDetails(APIView):
     #         else:
     #             request.user.set_password(request.data['password'])
 
-        # проверяем остальные данные
-        # user_serializer = CustomerSerializer(request.user, data=request.data, partial=True)
-        # if user_serializer.is_valid():
-        #     user_serializer.save()
-        #     return JsonResponse({'Status': True})
-        # else:
-        #     return JsonResponse({'Status': False, 'Errors': user_serializer.errors})
+    # проверяем остальные данные
+    # user_serializer = CustomerSerializer(request.user, data=request.data, partial=True)
+    # if user_serializer.is_valid():
+    #     user_serializer.save()
+    #     return JsonResponse({'Status': True})
+    # else:
+    #     return JsonResponse({'Status': False, 'Errors': user_serializer.errors})
+
+
+class AccountProviderDetails(APIView):
+    """
+    Класс для работы данными пользователя
+    """
+
+    # получить данные
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+        serializer_self = ProviderSerializer(request.user)
+        provider_id = serializer_self.data["id"]
+        shop_id = Provider.objects.filter(provider_id=provider_id)[0].shop_id
+        shop_name = Shop.objects.filter(id=shop_id).values("name")
+        provider_data = Provider.objects.filter(provider_id=provider_id).values('provider_id',
+                                                                                'position')
+        print(provider_data)
+        user_data = User.objects.filter(id=provider_id).values('email', 'first_name', "last_name")
+
+        return Response({'provider_data': provider_data, "shop": shop_name, "user_data": user_data},
+                        status=status.HTTP_200_OK)
 
 
 class CategoryView(ListAPIView):
     """
     Класс для просмотра категорий
     """
-    permission_classes = [AllowAny]
-
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
@@ -109,7 +130,5 @@ class ShopView(ListAPIView):
     """
     Класс для просмотра списка магазинов
     """
-    permission_classes = [AllowAny]
-
     queryset = Shop.objects.filter(state=True)
     serializer_class = ShopSerializer

@@ -23,6 +23,16 @@ class CustomerSerializer(serializers.ModelSerializer):
         # }
 
 
+class ProviderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Provider
+        fields = ['id', 'shop', 'position']
+        # fields = "__all__"
+        # # read_only_fields = ('id',)
+        # extra_kwargs = {
+        #     'user': {'write_only': True}
+        # }
+
 class CustomerCustomRegistrationSerializer(RegisterSerializer):
     customer = serializers.PrimaryKeyRelatedField(read_only=True, )
     first_name = serializers.CharField(required=True)
