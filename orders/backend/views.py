@@ -2,15 +2,19 @@ import json
 
 from django.contrib.auth.password_validation import validate_password
 from django.core import serializers
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.http import JsonResponse
+from requests import get
 from rest_auth.registration.views import RegisterView
 from rest_framework import status, viewsets
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from yaml import load as load_yaml, Loader
 
-from backend.models import Category, Shop, Customer, User, Provider
+from backend.models import Category, Shop, Customer, User, Provider, Parameter, ProductParameter, Product
 from backend.serializers import (CustomerCustomRegistrationSerializer, ProviderCustomRegistrationSerializer,
                                  LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer,
                                  ProviderSerializer)
@@ -58,6 +62,10 @@ class AccountCustomerDetails(APIView):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+
+        if not request.user.is_buyer:
+            return JsonResponse({'Status': False, 'Error': 'Только для покупателей'}, status=403)
+
         serializer_self = CustomerSerializer(request.user)
         customer_id = serializer_self.data["id"]
         customer_data = Customer.objects.filter(customer_id=customer_id).values('customer_id', 'city',
@@ -105,17 +113,71 @@ class AccountProviderDetails(APIView):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+
+        if not request.user.is_provider:
+            return JsonResponse({'Status': False, 'Error': 'Только для поставщиков'}, status=403)
+
         serializer_self = ProviderSerializer(request.user)
         provider_id = serializer_self.data["id"]
         shop_id = Provider.objects.filter(provider_id=provider_id)[0].shop_id
         shop_name = Shop.objects.filter(id=shop_id).values("name")
         provider_data = Provider.objects.filter(provider_id=provider_id).values('provider_id',
                                                                                 'position')
-        print(provider_data)
+        # print(provider_data)
         user_data = User.objects.filter(id=provider_id).values('email', 'first_name', "last_name")
 
         return Response({'provider_data': provider_data, "shop": shop_name, "user_data": user_data},
                         status=status.HTTP_200_OK)
+
+
+class ProviderPriceUpdate(APIView):
+    """
+    Класс для обновления прайса от поставщика
+    """
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+
+        if not request.user.is_provider:
+            return JsonResponse({'Status': False, 'Error': 'Только для поставщиков'}, status=403)
+
+        url = request.data.get('url')
+        if url:
+            validate_url = URLValidator()
+            try:
+                validate_url(url)
+            except ValidationError as e:
+                return JsonResponse({'Status': False, 'Error': str(e)})
+            else:
+                stream = get(url).content
+
+                data = load_yaml(stream, Loader=Loader)
+
+                shop = Shop.objects.get_or_create(name=data['shop'])
+
+                for category in data['categories']:
+                    category_object, _ = Category.objects.get_or_create(id=category['id'], name=category['name'])
+                for item in data['goods']:
+                    product, _ = Product.objects.get_or_create(external_id=item['id'],
+                                                               name=item['name'],
+                                                               category_id=item['category'],
+                                                               model=item['model'],
+                                                               price=item['price'],
+                                                               price_rrc=item['price_rrc'],
+                                                               quantity=item['quantity'],
+                                                               shop_id=shop[0].id
+                                                               )
+                    #
+                    for name, value in item['parameters'].items():
+                        parameter_object, _ = Parameter.objects.get_or_create(name=name)
+                        ProductParameter.objects.create(product_id=product.id,
+                                                        parameter_id=parameter_object.id,
+                                                        value=value)
+
+                return JsonResponse({'Status': True})
+
+        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
 
 
 class CategoryView(ListAPIView):

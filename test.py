@@ -14,4 +14,4 @@ from datetime import datetime, timedelta
 
 # my_str = "test"
 # print(my_str.encode())
-print("test".encode().hex())
+# print("test".encode().hex())
