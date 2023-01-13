@@ -14,10 +14,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from yaml import load as load_yaml, Loader
 
-from backend.models import Category, Shop, Customer, User, Provider, Parameter, ProductParameter, Product
+from backend.models import Category, Shop, Customer, User, Provider, Parameter, ProductParameter, Product, \
+    ConfirmEmailToken
 from backend.serializers import (CustomerCustomRegistrationSerializer, ProviderCustomRegistrationSerializer,
                                  LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer,
                                  ProviderSerializer)
+from backend.signals import new_user_registered
 
 
 class CustomerRegistrationView(RegisterView):
@@ -26,12 +28,37 @@ class CustomerRegistrationView(RegisterView):
     """
     serializer_class = CustomerCustomRegistrationSerializer
 
+    def get_response_data(self, user):
+        new_user_registered.send(sender=self.__class__, user_id=user.id)
+
+        return {"detail": "Verification e-mail sent."}
+
 
 class ProviderRegistrationView(RegisterView):
     """
     Для регистрации поставщиков
     """
     serializer_class = ProviderCustomRegistrationSerializer
+
+
+class ConfirmAccount(APIView):
+    """
+    Класс для подтверждения почтового адреса
+    """
+    # Регистрация методом POST
+    def post(self, request, *args, **kwargs):
+
+        # проверяем обязательные аргументы
+        token = request.GET.get('token', '')
+
+        token = ConfirmEmailToken.objects.filter(key=token).first()
+        if token:
+            token.user.is_active = True
+            token.user.save()
+            token.delete()
+            return JsonResponse({'Status': True})
+        else:
+            return JsonResponse({'Status': False, 'Errors': 'Неправильно указан токен или email'})
 
 
 class LoginAPIView(APIView):

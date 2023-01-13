@@ -1,13 +1,14 @@
 from django.urls import path
 
 from backend.views import CustomerRegistrationView, ProviderRegistrationView, LoginAPIView, \
-    CategoryView, ShopView, AccountCustomerDetails, AccountProviderDetails, ProviderPriceUpdate
+    CategoryView, ShopView, AccountCustomerDetails, AccountProviderDetails, ProviderPriceUpdate, ConfirmAccount
 
 app_name = "backend"
 urlpatterns = [
     #Registration Urls
     path('registration/customer/', CustomerRegistrationView.as_view(), name='register-customer'),
     path('registration/provider/', ProviderRegistrationView.as_view(), name='register-provider'),
+    path('user/register/confirm', ConfirmAccount.as_view(), name='user-register-confirm'),
     path('login/', LoginAPIView.as_view(), name='user_login'),
     path('customer/details', AccountCustomerDetails.as_view(), name='user-details'),
     path('provider/details', AccountProviderDetails.as_view(), name='provider-details'),

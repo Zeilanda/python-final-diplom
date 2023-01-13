@@ -9,3 +9,4 @@ django-allauth==0.52.0
 PyJWT~=2.6.0
 requests~=2.28.1
 ujson~=5.7.0
+django-rest-passwordreset
