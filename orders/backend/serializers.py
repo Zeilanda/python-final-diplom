@@ -165,7 +165,6 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class ProductParameterSerializer(serializers.ModelSerializer):
     parameter = serializers.StringRelatedField()
-    product = serializers.StringRelatedField()
 
     class Meta:
         model = ProductParameter
@@ -174,11 +173,11 @@ class ProductParameterSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     category = serializers.StringRelatedField()
-    product_parameters = ProductParameterSerializer(read_only=True, many=True)
+    parameters = ProductParameterSerializer(read_only=True, many=True)
 
     class Meta:
         model = Product
-        fields = ('name', 'model', 'price', 'price_rrc', 'quantity', 'category', 'shop', 'product_parameters')
+        fields = ('name', 'model', 'price', 'price_rrc', 'quantity', 'category', 'shop', 'parameters')
         read_only_fields = ('id', )
 
 

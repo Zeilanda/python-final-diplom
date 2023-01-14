@@ -250,7 +250,7 @@ class ProductsView(APIView):
         #     query).select_related(
         #     'shop', 'category').prefetch_related(
         #     'product_parameters__parameter').distinct()
-        queryset = Product.objects.filter(query)
+        queryset = Product.objects.filter(query).prefetch_related('parameters')
 
         serializer = ProductSerializer(queryset, many=True)
 
