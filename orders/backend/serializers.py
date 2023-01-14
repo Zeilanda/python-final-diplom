@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_auth.registration.serializers import RegisterSerializer
 
 
-from backend.models import Customer, Provider, Shop, Category
+from backend.models import Customer, Provider, Shop, Category, Product, ProductParameter, Parameter
 
 
 class ShopSerializer(serializers.ModelSerializer):
@@ -32,6 +32,7 @@ class ProviderSerializer(serializers.ModelSerializer):
         # extra_kwargs = {
         #     'user': {'write_only': True}
         # }
+
 
 class CustomerCustomRegistrationSerializer(RegisterSerializer):
     customer = serializers.PrimaryKeyRelatedField(read_only=True, )
@@ -160,3 +161,32 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ('id', 'name',)
         read_only_fields = ('id',)
+
+
+class ProductParameterSerializer(serializers.ModelSerializer):
+    parameter = serializers.StringRelatedField()
+    product = serializers.StringRelatedField()
+
+    class Meta:
+        model = ProductParameter
+        fields = ('parameter', 'value',)
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    category = serializers.StringRelatedField()
+    product_parameters = ProductParameterSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = Product
+        fields = ('name', 'model', 'price', 'price_rrc', 'quantity', 'category', 'shop', 'product_parameters')
+        read_only_fields = ('id', )
+
+
+# class Parameter(serializers.ModelSerializer):
+#     class Meta:
+#         model = Parameter
+#         fields = ('name',)
+
+
+
+

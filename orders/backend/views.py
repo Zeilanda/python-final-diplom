@@ -4,6 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core import serializers
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from django.db.models import Q
 from django.http import JsonResponse
 from requests import get
 from rest_auth.registration.views import RegisterView
@@ -18,7 +19,7 @@ from backend.models import Category, Shop, Customer, User, Provider, Parameter, 
     ConfirmEmailToken
 from backend.serializers import (CustomerCustomRegistrationSerializer, ProviderCustomRegistrationSerializer,
                                  LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer,
-                                 ProviderSerializer)
+                                 ProviderSerializer, ProductSerializer)
 from backend.signals import new_user_registered
 
 
@@ -39,6 +40,11 @@ class ProviderRegistrationView(RegisterView):
     Для регистрации поставщиков
     """
     serializer_class = ProviderCustomRegistrationSerializer
+
+    def get_response_data(self, user):
+        new_user_registered.send(sender=self.__class__, user_id=user.id)
+
+        return {"detail": "Verification e-mail sent."}
 
 
 class ConfirmAccount(APIView):
@@ -221,3 +227,31 @@ class ShopView(ListAPIView):
     """
     queryset = Shop.objects.filter(state=True)
     serializer_class = ShopSerializer
+
+
+class ProductsView(APIView):
+    """
+    Класс для поиска товаров
+    """
+    def get(self, request, *args, **kwargs):
+
+        query = Q(shop__state=True)
+        shop_id = request.query_params.get('shop_id')
+        category_id = request.query_params.get('category_id')
+
+        if shop_id:
+            query = query & Q(shop_id=shop_id)
+
+        if category_id:
+            query = query & Q(category_id=category_id)
+
+        # фильтруем и отбрасываем дубликаты
+        # queryset = Product.objects.filter(
+        #     query).select_related(
+        #     'shop', 'category').prefetch_related(
+        #     'product_parameters__parameter').distinct()
+        queryset = Product.objects.filter(query)
+
+        serializer = ProductSerializer(queryset, many=True)
+
+        return Response(serializer.data)
