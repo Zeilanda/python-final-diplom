@@ -36,7 +36,6 @@ class User(AbstractUser):
         ),
     )
 
-
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
 
@@ -94,7 +93,7 @@ class Customer(models.Model):
     house = models.CharField(max_length=10, verbose_name='Дом', blank=True)
     phone = models.CharField(max_length=12, verbose_name='Телефон', blank=True)
     user = models.OneToOneField(User, verbose_name='Клиент', related_name="user_customer", blank=True,
-                                    on_delete=models.CASCADE)
+                                on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Покупатель'
@@ -164,10 +163,12 @@ class ProductParameter(models.Model):
 
 
 class Order(models.Model):
-    customer = models.ForeignKey(Customer, verbose_name='Покупатель', related_name='orders', blank=True,
-                                 on_delete=models.CASCADE)
+    user = models.ForeignKey(Customer, to_field="user_id", verbose_name='Покупатель', related_name='orders',
+                             blank=True,
+                             on_delete=models.CASCADE)
     status = models.CharField(max_length=15, verbose_name='Статус', choices=STATE_CHOICES)
     order_datetime = models.DateTimeField(auto_now_add=True)
+
     # order_position = models.ManyToManyField(Product, through='OrderPosition')
 
     class Meta:
