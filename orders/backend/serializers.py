@@ -197,11 +197,9 @@ class OrderPositionSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     positions = OrderPositionSerializer(read_only=True, many=True)
 
-    total_cost = serializers.IntegerField()
-
     class Meta:
         model = Order
-        fields = ('id', 'positions', 'status', 'order_datetime', 'total_cost')
+        fields = ('id', 'positions', 'status', 'order_datetime', "address")
         read_only_fields = ('id',)
         extra_kwargs = {
             'order': {'write_only': True}

@@ -271,8 +271,8 @@ class BasketView(APIView):
         basket = Order.objects.filter(
             user_id=request.user.id, status='basket').prefetch_related(
             'positions__product__category',
-            'positions__product__parameters').annotate(
-            total_cost=Sum(F('positions__amount') * F('positions__product__price'))).distinct()
+            'positions__product__price',
+            'positions__product__parameters').distinct()
 
         serializer = OrderSerializer(basket, many=True)
         return Response(serializer.data)
@@ -316,8 +316,10 @@ class OrderNew(APIView):
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
         address = request.data['address']
-        order = Order.objects.get_or_create(status='basket', user_id=request.user.id)
-        new_order.send(sender=self.__class__, order_id=order[0].id, address=address)
+        order = Order.objects.get(status='basket', user_id=request.user.id)
+        order.status = "new"
+        order.save()
+        new_order.send(sender=self.__class__, order_id=order.id, address=address)
 
         return JsonResponse({'Status': True})
 
@@ -341,3 +343,27 @@ class ConfirmOrder(APIView):
             return JsonResponse({'Status': True})
         else:
             return JsonResponse({'Status': False, 'Errors': 'Неправильно указан токен'})
+
+
+class OrderList(ListAPIView):
+    """
+    Класс для просмотра списка магазинов
+    """
+    queryset = Order.objects.exclude(status="basket").prefetch_related(
+            # 'positions__product__category',
+            'positions__product',
+            'positions__product__parameters')
+
+    serializer_class = OrderSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.queryset.filter(user_id=request.user.id)
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
