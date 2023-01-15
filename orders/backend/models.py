@@ -93,7 +93,7 @@ class Customer(models.Model):
     street = models.CharField(max_length=30, verbose_name='Улица', blank=True)
     house = models.CharField(max_length=10, verbose_name='Дом', blank=True)
     phone = models.CharField(max_length=12, verbose_name='Телефон', blank=True)
-    customer = models.OneToOneField(User, verbose_name='Клиент', related_name="user_customer", blank=True,
+    user = models.OneToOneField(User, verbose_name='Клиент', related_name="user_customer", blank=True,
                                     on_delete=models.CASCADE)
 
     class Meta:
@@ -144,6 +144,9 @@ class Product(models.Model):
     shop = models.ForeignKey(Shop, verbose_name='Магазин', related_name='shop_product', blank=True,
                              on_delete=models.CASCADE)
 
+    def __str__(self):
+        return self.name
+
 
 class Parameter(models.Model):
     name = models.CharField(max_length=200)
@@ -165,7 +168,7 @@ class Order(models.Model):
                                  on_delete=models.CASCADE)
     status = models.CharField(max_length=15, verbose_name='Статус', choices=STATE_CHOICES)
     order_datetime = models.DateTimeField(auto_now_add=True)
-    order_position = models.ManyToManyField(Product, through='OrderPosition')
+    # order_position = models.ManyToManyField(Product, through='OrderPosition')
 
     class Meta:
         verbose_name = 'Заказ'
@@ -176,11 +179,18 @@ class Order(models.Model):
 
 
 class OrderPosition(models.Model):
-    order = models.ForeignKey(Order, verbose_name='Заказ', related_name='order_positions', blank=True,
+    order = models.ForeignKey(Order, verbose_name='Заказ', related_name='positions', blank=True, null=True,
                               on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, verbose_name='Товар', related_name='position_orders', blank=True,
+    product = models.ForeignKey(Product, verbose_name='Товар', related_name='order_positions', blank=True,
                                 on_delete=models.CASCADE)
     amount = models.PositiveIntegerField()
+
+    class Meta:
+        verbose_name = 'Заказанная позиция'
+        verbose_name_plural = "Список заказанных позиций"
+        constraints = [
+            models.UniqueConstraint(fields=['order_id', 'product'], name='unique_order_item'),
+        ]
 
 
 class ConfirmEmailToken(models.Model):

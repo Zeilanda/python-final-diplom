@@ -4,7 +4,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.core import serializers
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
-from django.db.models import Q
+from django.db import IntegrityError
+from django.db.models import Q, Sum, F
 from django.http import JsonResponse
 from requests import get
 from rest_auth.registration.views import RegisterView
@@ -14,12 +15,13 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from yaml import load as load_yaml, Loader
+from ujson import loads as load_json
 
 from backend.models import Category, Shop, Customer, User, Provider, Parameter, ProductParameter, Product, \
-    ConfirmEmailToken
+    ConfirmEmailToken, Order
 from backend.serializers import (CustomerCustomRegistrationSerializer, ProviderCustomRegistrationSerializer,
                                  LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer,
-                                 ProviderSerializer, ProductSerializer)
+                                 ProviderSerializer, ProductSerializer, OrderSerializer, OrderPositionSerializer)
 from backend.signals import new_user_registered
 
 
@@ -71,7 +73,6 @@ class LoginAPIView(APIView):
     """
     Logs in an existing user.
     """
-    permission_classes = [AllowAny]
     serializer_class = LoginSerializer
 
     def post(self, request):
@@ -263,3 +264,98 @@ class ProductInfoView(APIView):
         serializer = ProductSerializer(queryset, many=True)
 
         return Response(serializer.data)
+
+
+class BasketView(APIView):
+    """
+    Класс для работы с корзиной пользователя
+    """
+
+    # получить корзину
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+        basket = Order.objects.filter(
+            customer__user_id=request.user.id, status='basket').prefetch_related(
+            'positions__product__category',
+            'positions__product__parameters').annotate(
+            total_cost=Sum(F('positions__amount') * F('positions__product__price'))).distinct()
+
+        serializer = OrderSerializer(basket, many=True)
+        return Response(serializer.data)
+
+    # добавить товары в корзину
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+
+        items_string = request.data.get('items')
+        print(items_string)
+        # if items_string:
+        #     try:
+        #         items_dict = load_json(items_string)
+        #     except ValueError:
+        #         JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
+        #     else:
+        basket, _ = Order.objects.get_or_create(customer_id=request.user.id, status='basket')
+        objects_created = 0
+        for order_item in items_string:
+            order_item.update({'order': basket.id})
+            serializer = OrderPositionSerializer(data=order_item)
+            if serializer.is_valid():
+                try:
+                    serializer.save()
+                except IntegrityError as error:
+                    return JsonResponse({'Status': False, 'Errors': str(error)})
+                else:
+                    objects_created += 1
+
+            else:
+
+                JsonResponse({'Status': False, 'Errors': serializer.errors})
+
+        return JsonResponse({'Status': True, 'Создано объектов': objects_created})
+        # return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+    #
+    # # удалить товары из корзины
+    # def delete(self, request, *args, **kwargs):
+    #     if not request.user.is_authenticated:
+    #         return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+    #
+    #     items_sting = request.data.get('items')
+    #     if items_sting:
+    #         items_list = items_sting.split(',')
+    #         basket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
+    #         query = Q()
+    #         objects_deleted = False
+    #         for order_item_id in items_list:
+    #             if order_item_id.isdigit():
+    #                 query = query | Q(order_id=basket.id, id=order_item_id)
+    #                 objects_deleted = True
+    #
+    #         if objects_deleted:
+    #             deleted_count = OrderItem.objects.filter(query).delete()[0]
+    #             return JsonResponse({'Status': True, 'Удалено объектов': deleted_count})
+    #     return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+    #
+    # # добавить позиции в корзину
+    # def put(self, request, *args, **kwargs):
+    #     if not request.user.is_authenticated:
+    #         return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+    #
+    #     items_sting = request.data.get('items')
+    #     if items_sting:
+    #         try:
+    #             items_dict = load_json(items_sting)
+    #         except ValueError:
+    #             JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
+    #         else:
+    #             basket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
+    #             objects_updated = 0
+    #             for order_item in items_dict:
+    #                 if type(order_item['id']) == int and type(order_item['quantity']) == int:
+    #                     objects_updated += OrderItem.objects.filter(order_id=basket.id, id=order_item['id']).update(
+    #                         quantity=order_item['quantity'])
+    #
+    #             return JsonResponse({'Status': True, 'Обновлено объектов': objects_updated})
+    #     return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})

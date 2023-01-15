@@ -3,7 +3,8 @@ from rest_framework import serializers
 from rest_auth.registration.serializers import RegisterSerializer
 
 
-from backend.models import Customer, Provider, Shop, Category, Product, ProductParameter, Parameter
+from backend.models import Customer, Provider, Shop, Category, Product, ProductParameter, Parameter, OrderPosition, \
+    Order
 
 
 class ShopSerializer(serializers.ModelSerializer):
@@ -179,3 +180,41 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ('name', 'model', 'price', 'price_rrc', 'quantity', 'category', 'shop', 'parameters')
         read_only_fields = ('id', )
+
+
+class OrderPositionSerializer(serializers.ModelSerializer):
+    product = serializers.StringRelatedField()
+
+    class Meta:
+        model = OrderPosition
+        fields = ("id", "order", "product", 'product_id', "amount",)
+        read_only_fields = ('id',)
+        extra_kwargs = {
+            'order': {'write_only': True}
+        }
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    positions = OrderPositionSerializer(read_only=True, many=True)
+
+    total_cost = serializers.IntegerField()
+
+    class Meta:
+        model = Order
+        fields = ('id', 'positions', 'status', 'order_datetime', 'total_cost')
+        read_only_fields = ('id',)
+        extra_kwargs = {
+            'order': {'write_only': True}
+        }
+
+
+# class OrderSerializer(serializers.ModelSerializer):
+#     ordered_items = OrderItemCreateSerializer(read_only=True, many=True)
+#
+#     total_sum = serializers.IntegerField()
+#     contact = ContactSerializer(read_only=True)
+#
+#     class Meta:
+#         model = Order
+#         fields = ('id', 'ordered_items', 'state', 'dt', 'total_sum', 'contact',)
+#         read_only_fields = ('id',)
