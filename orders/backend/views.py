@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
-from django.db.models import Q, Sum, F
+from django.db.models import Q, Sum, F, Count
 from django.http import JsonResponse
 from requests import get
 from rest_auth.registration.views import RegisterView
@@ -351,13 +351,46 @@ class OrderList(ListAPIView):
     """
     queryset = Order.objects.exclude(status="basket").prefetch_related(
             # 'positions__product__category',
-            'positions__product',
-            'positions__product__parameters')
+            'positions__product')
 
     serializer_class = OrderSerializer
 
     def list(self, request, *args, **kwargs):
         queryset = self.queryset.filter(user_id=request.user.id)
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class OrderProcessing(ListAPIView):
+    """
+    Класс для просмотра списка магазинов
+    """
+    queryset = Order.objects.exclude(status="basket").prefetch_related(
+            # 'positions__product__category',
+            'positions__product')
+
+    serializer_class = OrderSerializer
+
+    def list(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+
+        if not request.user.is_provider:
+            return JsonResponse({'Status': False, 'Error': 'Только для поставщиков'}, status=403)
+        provider = Provider.objects.get(provider_id=request.user.id)
+        shop_id = provider.shop_id
+        queryset = (Order.objects.distinct()
+                    .filter(positions__product__shop_id=shop_id)
+                    .annotate(positions__amount=Count('positions'))
+                    .filter(positions__amount__gt=0))
+
         queryset = self.filter_queryset(queryset)
 
         page = self.paginate_queryset(queryset)
