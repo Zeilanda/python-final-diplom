@@ -2,7 +2,7 @@ from django.urls import path
 
 from backend.views import CustomerRegistrationView, ProviderRegistrationView, LoginAPIView, \
     CategoryView, ShopView, AccountCustomerDetails, AccountProviderDetails, ProviderPriceUpdate, ConfirmAccount, \
-    ProductsView, ProductInfoView, BasketView, BasketPosition
+    ProductsView, ProductInfoView, BasketView, BasketPosition, OrderNew, ConfirmOrder
 
 app_name = "backend"
 urlpatterns = [
@@ -19,7 +19,9 @@ urlpatterns = [
     path('products', ProductsView.as_view(), name='products'),
     path('product/<id>', ProductInfoView.as_view(), name='product-info'),
     path('basket', BasketView.as_view(), name='basket'),
-    path('basket/position', BasketPosition.as_view(), name='basket-position')
+    path('basket/position', BasketPosition.as_view(), name='basket-position'),
+    path('order/new', OrderNew.as_view(), name='order-new'),
+    path('order/confirm', ConfirmOrder.as_view(), name='order-confirm'),
 
 
 ]

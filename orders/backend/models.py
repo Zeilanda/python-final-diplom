@@ -168,6 +168,7 @@ class Order(models.Model):
                              on_delete=models.CASCADE)
     status = models.CharField(max_length=15, verbose_name='Статус', choices=STATE_CHOICES)
     order_datetime = models.DateTimeField(auto_now_add=True)
+    address = models.TextField(verbose_name='Адрес', null=True)
 
     # order_position = models.ManyToManyField(Product, through='OrderPosition')
 
@@ -231,3 +232,42 @@ class ConfirmEmailToken(models.Model):
 
     def __str__(self):
         return "Email confirmation token for user {user}".format(user=self.user)
+
+
+class ConfirmOrderToken(models.Model):
+    class Meta:
+        verbose_name = 'Токен подтверждения заказа'
+        verbose_name_plural = 'Токены подтверждения заказа'
+
+    @staticmethod
+    def generate_key():
+        """ generates a pseudo random code using os.urandom and binascii.hexlify """
+        return get_token_generator().generate_token()
+
+    order = models.ForeignKey(
+        Order,
+        related_name='confirm_order_tokens',
+        on_delete=models.CASCADE,
+        verbose_name=_("The Order which is associated to this confirmation")
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("When was this token generated")
+    )
+    address = models.TextField()
+    # Key field, though it is not the primary key of the model
+    key = models.CharField(
+        _("Key"),
+        max_length=64,
+        db_index=True,
+        unique=True
+    )
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = self.generate_key()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Confirmation token for order {self.order}"

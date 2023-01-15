@@ -11,11 +11,11 @@ from rest_framework.views import APIView
 from yaml import load as load_yaml, Loader
 
 from backend.models import Category, Shop, Customer, User, Provider, Parameter, ProductParameter, Product, \
-    ConfirmEmailToken, Order, OrderPosition
+    ConfirmEmailToken, Order, OrderPosition, ConfirmOrderToken
 from backend.serializers import (CustomerCustomRegistrationSerializer, ProviderCustomRegistrationSerializer,
                                  LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer,
                                  ProviderSerializer, ProductSerializer, OrderSerializer)
-from backend.signals import new_user_registered
+from backend.signals import new_user_registered, new_order
 
 
 class CustomerRegistrationView(RegisterView):
@@ -307,78 +307,37 @@ class BasketPosition(APIView):
         if amount > 0:
             OrderPosition.objects.create(product_id=product_id, amount=amount, order_id=order.id)
         return JsonResponse({'Status': True})
-    # добавить товары в корзину
-    # def post(self, request, *args, **kwargs):
-    #     if not request.user.is_authenticated:
-    #         return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
 
-        # items_string = request.data.get('items')
-        # print(items_string)
-        # if items_string:
-        #     try:
-        #         items_dict = load_json(items_string)
-        #     except ValueError:
-        #         JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
-        #     else:
-        #         basket, _ = Order.objects.get_or_create(customer_id=request.user.id, status='basket')
-        #         objects_created = 0
-        #         for order_item in items_dict:
-        #             order_item.update({'order': basket.id})
-        #             serializer = OrderPositionSerializer(data=order_item)
-        #             if serializer.is_valid():
-        #                 try:
-        #                     serializer.save()
-        #                 except IntegrityError as error:
-        #                     return JsonResponse({'Status': False, 'Errors': str(error)})
-        #                 else:
-        #                     objects_created += 1
-        #
-        #             else:
-        #
-        #                 JsonResponse({'Status': False, 'Errors': serializer.errors})
-        #
-        #         return JsonResponse({'Status': True, 'Создано объектов': objects_created})
-        # return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
-    #
-    # # удалить товары из корзины
-    # def delete(self, request, *args, **kwargs):
-    #     if not request.user.is_authenticated:
-    #         return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
-    #
-    #     items_sting = request.data.get('items')
-    #     if items_sting:
-    #         items_list = items_sting.split(',')
-    #         basket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
-    #         query = Q()
-    #         objects_deleted = False
-    #         for order_item_id in items_list:
-    #             if order_item_id.isdigit():
-    #                 query = query | Q(order_id=basket.id, id=order_item_id)
-    #                 objects_deleted = True
-    #
-    #         if objects_deleted:
-    #             deleted_count = OrderItem.objects.filter(query).delete()[0]
-    #             return JsonResponse({'Status': True, 'Удалено объектов': deleted_count})
-    #     return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
-    #
-    # # добавить позиции в корзину
-    # def put(self, request, *args, **kwargs):
-    #     if not request.user.is_authenticated:
-    #         return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
-    #
-    #     items_sting = request.data.get('items')
-    #     if items_sting:
-    #         try:
-    #             items_dict = load_json(items_sting)
-    #         except ValueError:
-    #             JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
-    #         else:
-    #             basket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
-    #             objects_updated = 0
-    #             for order_item in items_dict:
-    #                 if type(order_item['id']) == int and type(order_item['quantity']) == int:
-    #                     objects_updated += OrderItem.objects.filter(order_id=basket.id, id=order_item['id']).update(
-    #                         quantity=order_item['quantity'])
-    #
-    #             return JsonResponse({'Status': True, 'Обновлено объектов': objects_updated})
-    #     return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+
+class OrderNew(APIView):
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+
+        address = request.data['address']
+        order = Order.objects.get_or_create(status='basket', user_id=request.user.id)
+        new_order.send(sender=self.__class__, order_id=order[0].id, address=address)
+
+        return JsonResponse({'Status': True})
+
+
+class ConfirmOrder(APIView):
+    """
+    Класс для подтверждения почтового адреса
+    """
+    # Регистрация методом POST
+    def get(self, request, *args, **kwargs):
+
+        # проверяем обязательные аргументы
+        token = request.GET.get('token', '')
+
+        confirm_order_token = ConfirmOrderToken.objects.filter(key=token).first()
+        if confirm_order_token:
+            confirm_order_token.order.status = "confirmed"
+            confirm_order_token.order.address = confirm_order_token.address
+            confirm_order_token.order.save()
+            confirm_order_token.delete()
+            return JsonResponse({'Status': True})
+        else:
+            return JsonResponse({'Status': False, 'Errors': 'Неправильно указан токен'})
