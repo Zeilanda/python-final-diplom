@@ -231,7 +231,7 @@ class ShopView(ListAPIView):
 
 class ProductsView(APIView):
     """
-    Класс для поиска товаров
+    Класс для просмотра списка товаров выбранного магазина и/или категории
     """
     def get(self, request, *args, **kwargs):
 
@@ -245,12 +245,20 @@ class ProductsView(APIView):
         if category_id:
             query = query & Q(category_id=category_id)
 
-        # фильтруем и отбрасываем дубликаты
-        # queryset = Product.objects.filter(
-        #     query).select_related(
-        #     'shop', 'category').prefetch_related(
-        #     'product_parameters__parameter').distinct()
-        queryset = Product.objects.filter(query).prefetch_related('parameters')
+        queryset = Product.objects.filter(query).prefetch_related('parameters').distinct()
+
+        serializer = ProductSerializer(queryset, many=True)
+
+        return Response(serializer.data)
+
+
+class ProductInfoView(APIView):
+    """
+    Класс для просмотра карточки товара
+    """
+    def get(self, request, id):
+
+        queryset = Product.objects.filter(id=id)
 
         serializer = ProductSerializer(queryset, many=True)
 

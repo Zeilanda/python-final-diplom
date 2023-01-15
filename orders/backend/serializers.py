@@ -179,13 +179,3 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ('name', 'model', 'price', 'price_rrc', 'quantity', 'category', 'shop', 'parameters')
         read_only_fields = ('id', )
-
-
-# class Parameter(serializers.ModelSerializer):
-#     class Meta:
-#         model = Parameter
-#         fields = ('name',)
-
-
-
-
