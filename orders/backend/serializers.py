@@ -65,7 +65,7 @@ class CustomerCustomRegistrationSerializer(RegisterSerializer):
         user.first_name = self.cleaned_data.get("first_name")
         user.last_name = self.cleaned_data.get("last_name")
         user.save(update_fields=['first_name', 'last_name'])
-        customer = Customer(customer=user, city=self.cleaned_data.get("city"),
+        customer = Customer(user=user, city=self.cleaned_data.get("city"),
                             street=self.cleaned_data.get("street"),
                             house=self.cleaned_data.get("house"),
                             phone=self.cleaned_data.get("phone")

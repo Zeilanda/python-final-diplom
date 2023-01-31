@@ -1,3 +1,4 @@
+from celery.result import AsyncResult
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.db.models import Q, Sum, F, Count
@@ -15,7 +16,11 @@ from backend.models import Category, Shop, Customer, User, Provider, Parameter, 
 from backend.serializers import (CustomerCustomRegistrationSerializer, ProviderCustomRegistrationSerializer,
                                  LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer,
                                  ProviderSerializer, ProductSerializer, OrderSerializer)
-from backend.signals import new_user_registered, new_order
+
+from backend.tasks import new_user_registered, got_power
+
+
+# from backend.signals import new_user_registered, new_order
 
 
 class CustomerRegistrationView(RegisterView):
@@ -25,9 +30,11 @@ class CustomerRegistrationView(RegisterView):
     serializer_class = CustomerCustomRegistrationSerializer
 
     def get_response_data(self, user):
-        new_user_registered.send(sender=self.__class__, user_id=user.id)
+        # new_user_registered.send(sender=self.__class__, user_id=user.id)
+        new_user_registered.delay(user_id=user.id)
 
         return {"detail": "Verification e-mail sent."}
+
 
 
 class ProviderRegistrationView(RegisterView):

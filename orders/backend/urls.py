@@ -23,7 +23,7 @@ urlpatterns = [
     path('order/new', OrderNew.as_view(), name='order-new'),
     path('order/confirm', ConfirmOrder.as_view(), name='order-confirm'),
     path('orders', OrderList.as_view(), name='order-list'),
-    path('orders/processing', OrderProcessing.as_view(), name='order-processing')
+    path('orders/processing', OrderProcessing.as_view(), name='order-processing'),
 
 
 ]

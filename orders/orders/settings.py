@@ -139,6 +139,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# Celery settings
+CELERY_BROKER_URL = "redis://localhost:6379"
+CELERY_RESULT_BACKEND = "redis://localhost:6379"
+
 AUTH_USER_MODEL = "backend.User"
 
 EMAIL_HOST = 'smtp.mail.ru'
