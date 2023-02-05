@@ -12,3 +12,4 @@ ujson~=5.7.0
 django-rest-passwordreset
 celery
 redis
+gevent

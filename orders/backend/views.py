@@ -17,7 +17,7 @@ from backend.serializers import (CustomerCustomRegistrationSerializer, ProviderC
                                  LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer,
                                  ProviderSerializer, ProductSerializer, OrderSerializer)
 
-from backend.tasks import new_user_registered, got_power
+from backend.tasks import new_user_registered, new_order_created
 
 
 # from backend.signals import new_user_registered, new_order
@@ -36,7 +36,6 @@ class CustomerRegistrationView(RegisterView):
         return {"detail": "Verification e-mail sent."}
 
 
-
 class ProviderRegistrationView(RegisterView):
     """
     Для регистрации поставщиков
@@ -44,8 +43,8 @@ class ProviderRegistrationView(RegisterView):
     serializer_class = ProviderCustomRegistrationSerializer
 
     def get_response_data(self, user):
-        new_user_registered.send(sender=self.__class__, user_id=user.id)
-
+        # new_user_registered.send(sender=self.__class__, user_id=user.id)
+        new_user_registered.delay(user_id=user.id)
         return {"detail": "Verification e-mail sent."}
 
 
@@ -71,7 +70,7 @@ class ConfirmAccount(APIView):
 
 class LoginAPIView(APIView):
     """
-    Logs in an existing user.
+    Авторизация пользователя
     """
     serializer_class = LoginSerializer
 
@@ -89,7 +88,7 @@ class LoginAPIView(APIView):
 
 class AccountCustomerDetails(APIView):
     """
-    Класс для работы данными пользователя
+    Класс для работы данными покупателя
     """
 
     # получить данные
@@ -140,7 +139,7 @@ class AccountCustomerDetails(APIView):
 
 class AccountProviderDetails(APIView):
     """
-    Класс для работы данными пользователя
+    Класс для работы данными поставщика
     """
 
     # получить данные
@@ -216,7 +215,7 @@ class ProviderPriceUpdate(APIView):
 
 class CategoryView(ListAPIView):
     """
-    Класс для просмотра категорий
+    Класс для просмотра категорий товаров
     """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -278,7 +277,7 @@ class BasketView(APIView):
         basket = Order.objects.filter(
             user_id=request.user.id, status='basket').prefetch_related(
             'positions__product__category',
-            'positions__product__price',
+            # 'positions__product__price',
             'positions__product__parameters').distinct()
 
         serializer = OrderSerializer(basket, many=True)
@@ -287,7 +286,7 @@ class BasketView(APIView):
 
 class BasketPosition(APIView):
     """
-    Concrete view for creating a model instance.
+    Класс для добавления или изменения позиции в корзине
     """
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -317,6 +316,9 @@ class BasketPosition(APIView):
 
 
 class OrderNew(APIView):
+    """
+    Класс для формирования нового заказа
+    """
 
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -326,14 +328,15 @@ class OrderNew(APIView):
         order = Order.objects.get(status='basket', user_id=request.user.id)
         order.status = "new"
         order.save()
-        new_order.send(sender=self.__class__, order_id=order.id, address=address)
+        new_order_created.delay(order_id=order.id, address=address)
+        # new_order.send(sender=self.__class__, order_id=order.id, address=address)
 
         return JsonResponse({'Status': True})
 
 
 class ConfirmOrder(APIView):
     """
-    Класс для подтверждения почтового адреса
+    Класс для подтверждения заказа
     """
     # Регистрация методом POST
     def get(self, request, *args, **kwargs):
@@ -377,7 +380,7 @@ class OrderList(ListAPIView):
 
 class OrderProcessing(ListAPIView):
     """
-    Класс для просмотра списка магазинов
+    Класс для просмотра списка заказов для поставщиков
     """
     queryset = Order.objects.exclude(status="basket").prefetch_related(
             # 'positions__product__category',

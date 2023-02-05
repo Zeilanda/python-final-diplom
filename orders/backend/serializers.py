@@ -8,12 +8,18 @@ from backend.models import Customer, Provider, Shop, Category, Product, ProductP
 
 
 class ShopSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для магазина
+    """
     class Meta:
         model = Shop
         fields = ['id', 'name']
 
 
 class CustomerSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для покупателя
+    """
     class Meta:
         model = Customer
         fields = ['id', 'city', 'street', 'house', 'phone']
@@ -25,6 +31,9 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 
 class ProviderSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для поставщика
+    """
     class Meta:
         model = Provider
         fields = ['id', 'shop', 'position']
@@ -36,6 +45,9 @@ class ProviderSerializer(serializers.ModelSerializer):
 
 
 class CustomerCustomRegistrationSerializer(RegisterSerializer):
+    """
+    Сериализатор подтверждения регистрации покупателя
+    """
     customer = serializers.PrimaryKeyRelatedField(read_only=True, )
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
@@ -76,6 +88,9 @@ class CustomerCustomRegistrationSerializer(RegisterSerializer):
 
 
 class ProviderCustomRegistrationSerializer(RegisterSerializer):
+    """
+    Сериализатор для подтверждения регистрации поставщика
+    """
     provider = serializers.PrimaryKeyRelatedField(read_only=True, )
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
@@ -158,6 +173,9 @@ class LoginSerializer(serializers.Serializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для категорий товаров
+    """
     class Meta:
         model = Category
         fields = ('id', 'name',)
@@ -165,6 +183,9 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductParameterSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для параметров товара
+    """
     parameter = serializers.StringRelatedField()
 
     class Meta:
@@ -173,6 +194,9 @@ class ProductParameterSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для товара
+    """
     category = serializers.StringRelatedField()
     parameters = ProductParameterSerializer(read_only=True, many=True)
 
@@ -183,6 +207,9 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class OrderPositionSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для позиций в заказе
+    """
     product = serializers.StringRelatedField()
 
     class Meta:
@@ -195,6 +222,9 @@ class OrderPositionSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для заказа
+    """
     positions = OrderPositionSerializer(read_only=True, many=True)
 
     class Meta:

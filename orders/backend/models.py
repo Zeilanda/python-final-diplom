@@ -18,6 +18,9 @@ STATE_CHOICES = (
 
 
 class User(AbstractUser):
+    """
+    Класс User, наследуется от AbstractUser
+    """
     is_provider = models.BooleanField(default=False)
     is_buyer = models.BooleanField(default=False)
     email = models.EmailField(_('email address'), unique=True)
@@ -88,6 +91,9 @@ class User(AbstractUser):
 
 
 class Customer(models.Model):
+    """
+    Класс для покупателя (клиента)
+    """
     city = models.CharField(max_length=30, verbose_name='Город', blank=True)
     street = models.CharField(max_length=30, verbose_name='Улица', blank=True)
     house = models.CharField(max_length=10, verbose_name='Дом', blank=True)
@@ -102,11 +108,17 @@ class Customer(models.Model):
 
 
 class Shop(models.Model):
+    """
+    Класс для магазина
+    """
     name = models.CharField(max_length=50, verbose_name='Название', unique=True)
     state = models.BooleanField(verbose_name='статус получения заказов', default=True)
 
 
 class Provider(models.Model):
+    """
+    Класс для поставщика
+    """
     shop = models.ForeignKey(Shop, verbose_name='Магазин', related_name='shop_providers', blank=True,
                              on_delete=models.CASCADE)
     position = models.CharField(max_length=25, verbose_name='Должность', blank=True)
@@ -120,6 +132,9 @@ class Provider(models.Model):
 
 
 class Category(models.Model):
+    """
+    Класс для категорий товаров
+    """
     name = models.CharField(max_length=50, verbose_name='Название')
 
     class Meta:
@@ -132,6 +147,9 @@ class Category(models.Model):
 
 
 class Product(models.Model):
+    """
+    Класс для товаров
+    """
     name = models.CharField(max_length=80, verbose_name='Название')
     model = models.CharField(max_length=50, verbose_name='Модель')
     external_id = models.PositiveIntegerField(verbose_name='Внешний ИД')
@@ -148,6 +166,9 @@ class Product(models.Model):
 
 
 class Parameter(models.Model):
+    """
+    Класс для параметров товаров
+    """
     name = models.CharField(max_length=200)
     parameter = models.ManyToManyField(Product, through='ProductParameter')
 
@@ -156,6 +177,9 @@ class Parameter(models.Model):
 
 
 class ProductParameter(models.Model):
+    """
+    Класс для связывания товаров и их параметров
+    """
     product = models.ForeignKey(Product, verbose_name='Продукт', related_name='parameters', blank=True,
                                 on_delete=models.CASCADE)
     parameter = models.ForeignKey(Parameter, verbose_name='Параметр', blank=True, on_delete=models.CASCADE)
@@ -163,6 +187,9 @@ class ProductParameter(models.Model):
 
 
 class Order(models.Model):
+    """
+    Класс для заказов
+    """
     user = models.ForeignKey(Customer, to_field="user_id", verbose_name='Покупатель', related_name='orders',
                              blank=True,
                              on_delete=models.CASCADE)
@@ -181,6 +208,9 @@ class Order(models.Model):
 
 
 class OrderPosition(models.Model):
+    """
+    Класс для связи заказов и товаров
+    """
     order = models.ForeignKey(Order, verbose_name='Заказ', related_name='positions', blank=True, null=True,
                               on_delete=models.CASCADE)
     product = models.ForeignKey(Product, verbose_name='Товар', related_name='order_positions', blank=True,
@@ -196,6 +226,9 @@ class OrderPosition(models.Model):
 
 
 class ConfirmEmailToken(models.Model):
+    """
+    Класс для подтверждения своего аккаунта пользователем
+    """
     class Meta:
         verbose_name = 'Токен подтверждения Email'
         verbose_name_plural = 'Токены подтверждения Email'
@@ -235,6 +268,9 @@ class ConfirmEmailToken(models.Model):
 
 
 class ConfirmOrderToken(models.Model):
+    """
+    Класс для подтверждения своего заказа покупателем
+    """
     class Meta:
         verbose_name = 'Токен подтверждения заказа'
         verbose_name_plural = 'Токены подтверждения заказа'
