@@ -101,7 +101,7 @@ class AccountCustomerDetails(APIView):
 
         serializer_self = CustomerSerializer(request.user)
         customer_id = serializer_self.data["id"]
-        customer_data = Customer.objects.filter(customer_id=customer_id).values('customer_id', 'city',
+        customer_data = Customer.objects.filter(user_id=customer_id).values('user_id', 'city',
                                                                                 'street', 'house', 'phone')
         user_data = User.objects.filter(id=customer_id).values('email', 'first_name', "last_name")
 

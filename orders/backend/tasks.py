@@ -11,7 +11,7 @@ from celery import shared_task
 @shared_task()
 def new_user_registered(user_id, **kwargs):
     """
-    отправляем письмо с подтрердждением почты
+    отправляем письмо с подтверждением почты
     """
     logging.warning('Registered start')
     print('Registered start!!!')

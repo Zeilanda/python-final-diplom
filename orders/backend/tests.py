@@ -1,17 +1,21 @@
-from django.core import mail
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIRequestFactory, force_authenticate
+
+from backend.models import User
+from backend.views import AccountCustomerDetails
 
 
-class CustomerRegisterTestCase(APITestCase):
+class CustomerTestCase(APITestCase):
 
     # register_url = '/api/registration/customer'
     register_url = reverse('backend:register-customer')
     verify_email_url = reverse('backend:user-register-confirm')
     login_url = reverse('backend:user_login')
+    customer_details = reverse('backend:user-details')
 
-    def test_register(self):
+
+    def test_register_customer(self):
 
         # register data
         data = {
@@ -42,13 +46,29 @@ class CustomerRegisterTestCase(APITestCase):
             "A user with this email and password was not found." in response.json()["non_field_errors"]
         )
 
-class ProviderRegisterTestCase(APITestCase):
+        # force authenticate
+        factory = APIRequestFactory()
+        user = User.objects.get(email='user34@example-email.com')
+        # users = User.objects.values()
+        #
+        # print(users)
+        view = AccountCustomerDetails.as_view()
+        # Make an authenticated request to the view...
+        request = factory.get(self.customer_details)
+        force_authenticate(request, user=user)
+        response = view(request)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+
+class ProviderTestCase(APITestCase):
 
     register_url = reverse('backend:register-provider')
     verify_email_url = reverse('backend:user-register-confirm')
     login_url = reverse('backend:user_login')
 
-    def test_register(self):
+    def test_register_provider(self):
 
         # register data
         data = {
@@ -66,3 +86,14 @@ class ProviderRegisterTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.json()["detail"], "Verification e-mail sent.")
+
+        # try to login - should fail, because email is not verified
+        login_data = {
+            "email": data["email"],
+            "password": data["password1"],
+        }
+        response = self.client.post(self.login_url, login_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(
+            "A user with this email and password was not found." in response.json()["non_field_errors"]
+        )
