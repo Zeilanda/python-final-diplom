@@ -1,16 +1,12 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 
 from backend.views import CustomerRegistrationView, ProviderRegistrationView, LoginAPIView, \
     CategoryView, ShopView, AccountCustomerDetails, AccountProviderDetails, ProviderPriceUpdate, ConfirmAccount, \
-    ProductsViewSet, ProductInfoView, BasketView, BasketPosition, OrderNew, ConfirmOrder, OrderList, OrderProcessing
+    ProductsViewSet, BasketView, BasketPosition, OrderNew, ConfirmOrder, OrderList, OrderProcessing
 
-product_list = ProductsViewSet.as_view({
-    'get': 'list'
-})
-
-product_detail = ProductsViewSet.as_view({
-    'get': 'retrieve'
-})
+router = DefaultRouter()
+router.register('products', ProductsViewSet, basename='product')
 
 app_name = "backend"
 urlpatterns = [
@@ -23,14 +19,13 @@ urlpatterns = [
     path('price/update', ProviderPriceUpdate.as_view(), name='price-update'),
     path('categories', CategoryView.as_view(), name='categories'),
     path('shops', ShopView.as_view(), name='shops'),
-    path('products', product_list, name='products'),
-    path('products/<int:pk>', product_detail, name='product-info'),
     path('basket', BasketView.as_view(), name='basket'),
     path('basket/position', BasketPosition.as_view(), name='basket-position'),
     path('order/new', OrderNew.as_view(), name='order-new'),
     path('order/confirm', ConfirmOrder.as_view(), name='order-confirm'),
     path('orders', OrderList.as_view(), name='order-list'),
     path('orders/processing', OrderProcessing.as_view(), name='order-processing'),
+    path('', include(router.urls)),
 
 
 ]
