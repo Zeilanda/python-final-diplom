@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ReadOnlyModelViewSet
 from yaml import load as load_yaml, Loader
 
 from backend.models import Category, Shop, Customer, User, Provider, Parameter, ProductParameter, Product, \
@@ -229,15 +230,17 @@ class ShopView(ListAPIView):
     serializer_class = ShopSerializer
 
 
-class ProductsView(APIView):
+class ProductsViewSet(ReadOnlyModelViewSet):
     """
     Класс для просмотра списка товаров выбранного магазина и/или категории
     """
-    def get(self, request, *args, **kwargs):
 
+    serializer_class = ProductSerializer
+
+    def get_queryset(self):
         query = Q(shop__state=True)
-        shop_id = request.query_params.get('shop_id')
-        category_id = request.query_params.get('category_id')
+        shop_id = self.request.query_params.get('shop_id')
+        category_id = self.request.query_params.get('category_id')
 
         if shop_id:
             query = query & Q(shop_id=shop_id)
@@ -247,9 +250,7 @@ class ProductsView(APIView):
 
         queryset = Product.objects.filter(query).prefetch_related('parameters').distinct()
 
-        serializer = ProductSerializer(queryset, many=True)
-
-        return Response(serializer.data)
+        return queryset
 
 
 class ProductInfoView(APIView):
