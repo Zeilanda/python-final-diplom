@@ -8,6 +8,10 @@ product_list = ProductsViewSet.as_view({
     'get': 'list'
 })
 
+product_detail = ProductsViewSet.as_view({
+    'get': 'retrieve'
+})
+
 app_name = "backend"
 urlpatterns = [
     path('registration/customer', CustomerRegistrationView.as_view(), name='register-customer'),
@@ -20,7 +24,7 @@ urlpatterns = [
     path('categories', CategoryView.as_view(), name='categories'),
     path('shops', ShopView.as_view(), name='shops'),
     path('products', product_list, name='products'),
-    path('product/<id>', ProductInfoView.as_view(), name='product-info'),
+    path('products/<int:pk>', product_detail, name='product-info'),
     path('basket', BasketView.as_view(), name='basket'),
     path('basket/position', BasketPosition.as_view(), name='basket-position'),
     path('order/new', OrderNew.as_view(), name='order-new'),

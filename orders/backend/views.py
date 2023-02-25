@@ -1,7 +1,6 @@
-from celery.result import AsyncResult
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
-from django.db.models import Q, Sum, F, Count
+from django.db.models import Q, Count
 from django.http import JsonResponse
 from requests import get
 from rest_auth.registration.views import RegisterView
@@ -17,7 +16,6 @@ from backend.models import Category, Shop, Customer, User, Provider, Parameter, 
 from backend.serializers import (CustomerCustomRegistrationSerializer, ProviderCustomRegistrationSerializer,
                                  LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer,
                                  ProviderSerializer, ProductSerializer, OrderSerializer)
-
 from backend.tasks import new_user_registered, new_order_created
 
 
@@ -251,19 +249,6 @@ class ProductsViewSet(ReadOnlyModelViewSet):
         queryset = Product.objects.filter(query).prefetch_related('parameters').distinct()
 
         return queryset
-
-
-class ProductInfoView(APIView):
-    """
-    Класс для просмотра карточки товара
-    """
-    def get(self, request, id):
-
-        queryset = Product.objects.filter(id=id)
-
-        serializer = ProductSerializer(queryset, many=True)
-
-        return Response(serializer.data)
 
 
 class BasketView(APIView):
