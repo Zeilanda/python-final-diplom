@@ -7,6 +7,7 @@ from rest_auth.registration.views import RegisterView
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from yaml import load as load_yaml, Loader
@@ -26,6 +27,7 @@ class CustomerRegistrationView(RegisterView):
     """
     Для регистрации покупателей
     """
+    throttle_classes = [AnonRateThrottle]
     serializer_class = CustomerCustomRegistrationSerializer
 
     def get_response_data(self, user):
@@ -39,6 +41,7 @@ class ProviderRegistrationView(RegisterView):
     """
     Для регистрации поставщиков
     """
+    throttle_classes = [AnonRateThrottle]
     serializer_class = ProviderCustomRegistrationSerializer
 
     def get_response_data(self, user):
@@ -52,6 +55,7 @@ class ConfirmAccount(APIView):
     Класс для подтверждения почтового адреса
     """
     # Регистрация методом POST
+    throttle_classes = [AnonRateThrottle]
     def post(self, request, *args, **kwargs):
 
         # проверяем обязательные аргументы
@@ -71,6 +75,7 @@ class LoginAPIView(APIView):
     """
     Авторизация пользователя
     """
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     serializer_class = LoginSerializer
 
     def post(self, request):
@@ -89,7 +94,7 @@ class AccountCustomerDetails(APIView):
     """
     Класс для работы данными покупателя
     """
-
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     # получить данные
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -140,7 +145,7 @@ class AccountProviderDetails(APIView):
     """
     Класс для работы данными поставщика
     """
-
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     # получить данные
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -166,7 +171,7 @@ class ProviderPriceUpdate(APIView):
     """
     Класс для обновления прайса от поставщика
     """
-
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -216,6 +221,7 @@ class CategoryView(ListAPIView):
     """
     Класс для просмотра категорий товаров
     """
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
@@ -224,6 +230,7 @@ class ShopView(ListAPIView):
     """
     Класс для просмотра списка магазинов
     """
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     queryset = Shop.objects.filter(state=True)
     serializer_class = ShopSerializer
 
@@ -232,7 +239,7 @@ class ProductsViewSet(ReadOnlyModelViewSet):
     """
     Класс для просмотра списка товаров выбранного магазина и/или категории
     """
-
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     serializer_class = ProductSerializer
 
     def get_queryset(self):
@@ -255,7 +262,7 @@ class BasketView(APIView):
     """
     Класс для работы с корзиной пользователя
     """
-
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     # получить корзину
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -274,6 +281,7 @@ class BasketPosition(APIView):
     """
     Класс для добавления или изменения позиции в корзине
     """
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -305,6 +313,7 @@ class OrderNew(APIView):
     """
     Класс для формирования нового заказа
     """
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -325,6 +334,7 @@ class ConfirmOrder(APIView):
     Класс для подтверждения заказа
     """
     # Регистрация методом POST
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     def get(self, request, *args, **kwargs):
 
         # проверяем обязательные аргументы
@@ -345,6 +355,7 @@ class OrderList(ListAPIView):
     """
     Класс для просмотра списка магазинов
     """
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     queryset = Order.objects.exclude(status="basket").prefetch_related(
             # 'positions__product__category',
             'positions__product')
@@ -368,6 +379,7 @@ class OrderProcessing(ListAPIView):
     """
     Класс для просмотра списка заказов для поставщиков
     """
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     queryset = Order.objects.exclude(status="basket").prefetch_related(
             # 'positions__product__category',
             'positions__product')
