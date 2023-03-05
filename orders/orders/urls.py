@@ -16,6 +16,7 @@ Including another URLconf
 import allauth
 from django.contrib import admin
 from django.urls import path, include
+from drf_spectacular.views import SpectacularAPIView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,4 +25,6 @@ urlpatterns = [
     path('rest-auth/', include('rest_auth.urls')),
     path('rest-auth/registration/', include('rest_auth.registration.urls')),
     path('api/', include('backend.urls', namespace='api')),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path("", include("spectacular.urls")),
 ]

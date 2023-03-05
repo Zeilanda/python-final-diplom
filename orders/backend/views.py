@@ -14,8 +14,7 @@ from yaml import load as load_yaml, Loader
 
 from backend.models import Category, Shop, Customer, User, Provider, Parameter, ProductParameter, Product, \
     ConfirmEmailToken, Order, OrderPosition, ConfirmOrderToken
-from backend.serializers import (CustomerCustomRegistrationSerializer, ProviderCustomRegistrationSerializer,
-                                 LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer,
+from backend.serializers import (LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer,
                                  ProviderSerializer, ProductSerializer, OrderSerializer)
 from backend.tasks import new_user_registered, new_order_created
 
@@ -28,26 +27,32 @@ class CustomerRegistrationView(RegisterView):
     Для регистрации покупателей
     """
     throttle_classes = [AnonRateThrottle]
-    serializer_class = CustomerCustomRegistrationSerializer
 
-    def get_response_data(self, user):
-        # new_user_registered.send(sender=self.__class__, user_id=user.id)
-        new_user_registered.delay(user_id=user.id)
+    # serializer_class = CustomerCustomRegistrationSerializer
+    #
+    # def get_response_data(self, user):
+    #     # new_user_registered.send(sender=self.__class__, user_id=user.id)
+    #     new_user_registered.delay(user_id=user.id)
+    #
+    #     return {"detail": "Verification e-mail sent."}
+    def post(self, request):
+        serializer = CustomerSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
-        return {"detail": "Verification e-mail sent."}
 
-
-class ProviderRegistrationView(RegisterView):
-    """
-    Для регистрации поставщиков
-    """
-    throttle_classes = [AnonRateThrottle]
-    serializer_class = ProviderCustomRegistrationSerializer
-
-    def get_response_data(self, user):
-        # new_user_registered.send(sender=self.__class__, user_id=user.id)
-        new_user_registered.delay(user_id=user.id)
-        return {"detail": "Verification e-mail sent."}
+# class ProviderRegistrationView(RegisterView):
+#     """
+#     Для регистрации поставщиков
+#     """
+#     throttle_classes = [AnonRateThrottle]
+#     serializer_class = ProviderCustomRegistrationSerializer
+#
+#     def get_response_data(self, user):
+#         # new_user_registered.send(sender=self.__class__, user_id=user.id)
+#         new_user_registered.delay(user_id=user.id)
+#         return {"detail": "Verification e-mail sent."}
 
 
 class ConfirmAccount(APIView):
@@ -56,6 +61,7 @@ class ConfirmAccount(APIView):
     """
     # Регистрация методом POST
     throttle_classes = [AnonRateThrottle]
+
     def post(self, request, *args, **kwargs):
 
         # проверяем обязательные аргументы
@@ -95,6 +101,7 @@ class AccountCustomerDetails(APIView):
     Класс для работы данными покупателя
     """
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
+
     # получить данные
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -106,7 +113,7 @@ class AccountCustomerDetails(APIView):
         serializer_self = CustomerSerializer(request.user)
         customer_id = serializer_self.data["id"]
         customer_data = Customer.objects.filter(user_id=customer_id).values('user_id', 'city',
-                                                                                'street', 'house', 'phone')
+                                                                            'street', 'house', 'phone')
         user_data = User.objects.filter(id=customer_id).values('email', 'first_name', "last_name")
 
         print(user_data)
@@ -146,6 +153,7 @@ class AccountProviderDetails(APIView):
     Класс для работы данными поставщика
     """
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
+
     # получить данные
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -172,6 +180,7 @@ class ProviderPriceUpdate(APIView):
     Класс для обновления прайса от поставщика
     """
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
+
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -263,6 +272,7 @@ class BasketView(APIView):
     Класс для работы с корзиной пользователя
     """
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
+
     # получить корзину
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -282,6 +292,7 @@ class BasketPosition(APIView):
     Класс для добавления или изменения позиции в корзине
     """
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
+
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
@@ -335,6 +346,7 @@ class ConfirmOrder(APIView):
     """
     # Регистрация методом POST
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
+
     def get(self, request, *args, **kwargs):
 
         # проверяем обязательные аргументы
@@ -357,8 +369,8 @@ class OrderList(ListAPIView):
     """
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     queryset = Order.objects.exclude(status="basket").prefetch_related(
-            # 'positions__product__category',
-            'positions__product')
+        # 'positions__product__category',
+        'positions__product')
 
     serializer_class = OrderSerializer
 
@@ -381,8 +393,8 @@ class OrderProcessing(ListAPIView):
     """
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     queryset = Order.objects.exclude(status="basket").prefetch_related(
-            # 'positions__product__category',
-            'positions__product')
+        # 'positions__product__category',
+        'positions__product')
 
     serializer_class = OrderSerializer
 

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import jwt
+from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -17,6 +18,31 @@ STATE_CHOICES = (
 )
 
 
+class UserManager(BaseUserManager):
+
+    use_in_migration = True
+
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Email is Required')
+        user = self.model(email=self.normalize_email(email), **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff = True')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser = True')
+
+        return self.create_user(email, password, **extra_fields)
+
+
 class User(AbstractUser):
     """
     Класс User, наследуется от AbstractUser
@@ -26,6 +52,8 @@ class User(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     first_name = models.CharField(_('first name'), max_length=150, blank=True)
     last_name = models.CharField(_('last name'), max_length=150, blank=True)
+
+    objects = UserManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -41,53 +69,53 @@ class User(AbstractUser):
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
-
-    @property
-    def token(self):
-        """
-        Позволяет нам получить токен пользователя, вызвав `user.token` вместо
-        `user.generate_jwt_token().
-
-        Декоратор `@property` выше делает это возможным.
-        `token` называется «динамическим свойством ».
-        """
-        return self._generate_jwt_token()
-
-    def get_full_name(self):
-        """
-        Этот метод требуется Django для таких вещей,
-        как обработка электронной почты.
-        Обычно это имя и фамилия пользователя.
-        Поскольку мы не храним настоящее имя пользователя,
-        мы возвращаем его имя пользователя.
-        """
-        return self.username
-
-    def get_short_name(self):
-        """
-        Этот метод требуется Django для таких вещей,
-        как обработка электронной почты.
-        Как правило, это будет имя пользователя.
-        Поскольку мы не храним настоящее имя пользователя,
-        мы возвращаем его имя пользователя.
-        """
-        return self.username
-
-    def _generate_jwt_token(self):
-        """
-        Создает веб-токен JSON, в котором хранится идентификатор
-        этого пользователя и срок его действия
-        составляет 60 дней в будущем.
-        """
-        dt = datetime.now() + timedelta(days=60)
-        token = jwt.encode({
-            'id': self.pk,
-            'exp': int(round(dt.timestamp()))
-        }, settings.SECRET_KEY, algorithm='HS256')
-
-        # return token.decode('utf-8')
-        # return jwt.decode(token, settings.SECRET_KEY, algorithms="HS256")
-        return token
+    #
+    # @property
+    # def token(self):
+    #     """
+    #     Позволяет нам получить токен пользователя, вызвав `user.token` вместо
+    #     `user.generate_jwt_token().
+    #
+    #     Декоратор `@property` выше делает это возможным.
+    #     `token` называется «динамическим свойством ».
+    #     """
+    #     return self._generate_jwt_token()
+    #
+    # def get_full_name(self):
+    #     """
+    #     Этот метод требуется Django для таких вещей,
+    #     как обработка электронной почты.
+    #     Обычно это имя и фамилия пользователя.
+    #     Поскольку мы не храним настоящее имя пользователя,
+    #     мы возвращаем его имя пользователя.
+    #     """
+    #     return self.username
+    #
+    # def get_short_name(self):
+    #     """
+    #     Этот метод требуется Django для таких вещей,
+    #     как обработка электронной почты.
+    #     Как правило, это будет имя пользователя.
+    #     Поскольку мы не храним настоящее имя пользователя,
+    #     мы возвращаем его имя пользователя.
+    #     """
+    #     return self.username
+    #
+    # def _generate_jwt_token(self):
+    #     """
+    #     Создает веб-токен JSON, в котором хранится идентификатор
+    #     этого пользователя и срок его действия
+    #     составляет 60 дней в будущем.
+    #     """
+    #     dt = datetime.now() + timedelta(days=60)
+    #     token = jwt.encode({
+    #         'id': self.pk,
+    #         'exp': int(round(dt.timestamp()))
+    #     }, settings.SECRET_KEY, algorithm='HS256')
+    #
+    #     # return token.decode('utf-8')
+    #     # return jwt.decode(token, settings.SECRET_KEY, algorithms="HS256")
+    #     return token
 
 
 class Customer(models.Model):

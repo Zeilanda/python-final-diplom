@@ -13,3 +13,5 @@ django-rest-passwordreset
 celery
 redis
 gevent
+drf-spectacular
+djangorestframework-simplejwt

@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+from django.urls import reverse_lazy
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
@@ -44,6 +46,7 @@ INSTALLED_APPS = [
     'rest_auth.registration',
     'rest_framework',
     'rest_framework.authtoken',
+    'drf_spectacular',
 ]
 
 REST_FRAMEWORK = {
@@ -54,7 +57,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         # 'rest_framework.authentication.TokenAuthentication',
         # 'rest_framework.authentication.BasicAuthentication',
-        'backend.backends.JWTAuthentication',
+        # 'backend.backends.JWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
@@ -63,9 +67,19 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '10/day',
         'user': '100/day'
-    }
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+
 }
 
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Test APIs",
+    "DESCRIPTION": "Various APIs for Test service",
+    "VERSION": "1.0.0",
+    "PREPROCESSING_HOOKS": ["spectacular.hooks.remove_apis_from_list"],
+    # Custom Spectacular Settings
+    "EXCLUDE_PATH": [reverse_lazy("schema")],
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
