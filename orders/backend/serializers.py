@@ -2,8 +2,8 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 from rest_auth.registration.serializers import RegisterSerializer
 
-from backend.models import Customer, Provider, Shop, Category, Product, ProductParameter, Parameter, OrderPosition, \
-    Order
+from backend.models import Customer, Provider, Shop, Category, Product, ProductParameter, OrderPosition, \
+    Order, User
 
 
 class ShopSerializer(serializers.ModelSerializer):
@@ -24,21 +24,6 @@ class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = ['id', 'city', 'street', 'house', 'phone']
-        # fields = "__all__"
-        # # read_only_fields = ('id',)
-        # extra_kwargs = {
-        #     'user': {'write_only': True}
-        # }
-
-    def create(self, validated_data):
-        user = Customer.objects.create(email=validated_data['email'],
-                                       city=validated_data['city'],
-                                       street=validated_data['street'],
-                                       house=validated_data['house'],
-                                       phone=validated_data['phone'])
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
 
 
 class ProviderSerializer(serializers.ModelSerializer):
@@ -49,92 +34,90 @@ class ProviderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Provider
         fields = ['id', 'shop', 'position']
-        # fields = "__all__"
-        # # read_only_fields = ('id',)
-        # extra_kwargs = {
-        #     'user': {'write_only': True}
-        # }
 
 
-# class CustomerCustomRegistrationSerializer(RegisterSerializer):
-#     """
-#     Сериализатор подтверждения регистрации покупателя
-#     """
-#     customer = serializers.PrimaryKeyRelatedField(read_only=True, )
-#     first_name = serializers.CharField(required=True)
-#     last_name = serializers.CharField(required=True)
-#     username = None
-#     city = serializers.CharField(required=True)
-#     street = serializers.CharField(required=True)
-#     house = serializers.CharField(required=True)
-#     phone = serializers.CharField(required=True)
-#
-#     def get_cleaned_data(self):
-#         data = super(CustomerCustomRegistrationSerializer, self).get_cleaned_data()
-#         extra_data = {
-#             "first_name": self.validated_data.get("first_name", ""),
-#             "last_name": self.validated_data.get("last_name", ""),
-#             "city": self.validated_data.get("city", ""),
-#             "street": self.validated_data.get("street", ""),
-#             "house": self.validated_data.get("house", ""),
-#             "phone": self.validated_data.get("phone", "")
-#         }
-#         data.update(extra_data)
-#         return data
-#
-#     def save(self, request):
-#         user = super(CustomerCustomRegistrationSerializer, self).save(request)
-#         user.is_buyer = True
-#         user.save()
-#         user.first_name = self.cleaned_data.get("first_name")
-#         user.last_name = self.cleaned_data.get("last_name")
-#         user.save(update_fields=['first_name', 'last_name'])
-#         customer = Customer(user=user, city=self.cleaned_data.get("city"),
-#                             street=self.cleaned_data.get("street"),
-#                             house=self.cleaned_data.get("house"),
-#                             phone=self.cleaned_data.get("phone")
-#                             )
-#         customer.save()
-#
-#         return user
-#
-#
-# class ProviderCustomRegistrationSerializer(RegisterSerializer):
-#     """
-#     Сериализатор для подтверждения регистрации поставщика
-#     """
-#     provider = serializers.PrimaryKeyRelatedField(read_only=True, )
-#     first_name = serializers.CharField(required=True)
-#     last_name = serializers.CharField(required=True)
-#     username = None
-#     shop = serializers.CharField(required=True)
-#     position = serializers.CharField(required=True)
-#
-#     def get_cleaned_data(self):
-#         data = super(ProviderCustomRegistrationSerializer, self).get_cleaned_data()
-#         extra_data = {
-#             "first_name": self.validated_data.get("first_name", ""),
-#             "last_name": self.validated_data.get("last_name", ""),
-#             "shop": self.validated_data.get("shop", ""),
-#             "position": self.validated_data.get("position", ""),
-#         }
-#         data.update(extra_data)
-#         return data
-#
-#     def save(self, request):
-#         user = super(ProviderCustomRegistrationSerializer, self).save(request)
-#         user.is_provider = True
-#         user.save()
-#         user.first_name = self.cleaned_data.get("first_name")
-#         user.last_name = self.cleaned_data.get("last_name")
-#         user.save(update_fields=['first_name', 'last_name'])
-#         shop = Shop.objects.get_or_create(name=self.cleaned_data.get("shop"))
-#         print(shop)
-#         provider = Provider(provider=user, shop=shop[0],
-#                             position=self.cleaned_data.get("position"),
-#                             )
-#         provider.save()
-#         return user
+class CustomerRegistrationSerializer(RegisterSerializer):
+    """
+    Сериализатор подтверждения регистрации покупателя
+    """
+    customer = serializers.PrimaryKeyRelatedField(read_only=True, )
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+    username = None
+    city = serializers.CharField(required=True)
+    street = serializers.CharField(required=True)
+    house = serializers.CharField(required=True)
+    phone = serializers.CharField(required=True)
+
+    def get_cleaned_data(self):
+        data = super(CustomerRegistrationSerializer, self).get_cleaned_data()
+        extra_data = {
+            "first_name": self.validated_data.get("first_name", ""),
+            "last_name": self.validated_data.get("last_name", ""),
+            "city": self.validated_data.get("city", ""),
+            "street": self.validated_data.get("street", ""),
+            "house": self.validated_data.get("house", ""),
+            "phone": self.validated_data.get("phone", "")
+        }
+        data.update(extra_data)
+        return data
+
+    def save(self, request):
+        user = User.objects.create_user(email=self.validated_data.get('email'),
+                                        username=self.validated_data.get('email'),
+                                        password=self.validated_data.get('password1'),
+                                        first_name=self.validated_data.get("first_name"),
+                                        last_name=self.validated_data.get("last_name"),
+                                        is_buyer=True)
+
+        customer = Customer(user=user, city=self.validated_data.get("city"),
+                            street=self.validated_data.get("street"),
+                            house=self.validated_data.get("house"),
+                            phone=self.validated_data.get("phone")
+                            )
+        customer.save()
+
+        return user
+
+
+class ProviderRegistrationSerializer(RegisterSerializer):
+    """
+    Сериализатор для подтверждения регистрации поставщика
+    """
+    provider = serializers.PrimaryKeyRelatedField(read_only=True, )
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+    username = None
+    shop = serializers.CharField(required=True)
+    position = serializers.CharField(required=True)
+
+    def get_cleaned_data(self):
+        data = super(ProviderRegistrationSerializer, self).get_cleaned_data()
+        extra_data = {
+            "first_name": self.validated_data.get("first_name", ""),
+            "last_name": self.validated_data.get("last_name", ""),
+            "shop": self.validated_data.get("shop", ""),
+            "position": self.validated_data.get("position", ""),
+        }
+        data.update(extra_data)
+        return data
+
+    def save(self, request):
+        # user = super(ProviderRegistrationSerializer, self).save(request)
+        user = User.objects.create_user(email=self.validated_data.get('email'),
+                                        username=self.validated_data.get('email'),
+                                        password=self.validated_data.get('password1'),
+                                        first_name=self.validated_data.get("first_name"),
+                                        last_name=self.validated_data.get("last_name"),
+                                        is_provider=True)
+
+        shop = Shop.objects.get_or_create(name=self.validated_data.get("shop"))
+        print(shop)
+        provider = Provider(provider=user, shop=shop[0],
+                            position=self.validated_data.get("position"),
+                            )
+        provider.save()
+        return user
 
 
 class LoginSerializer(serializers.Serializer):

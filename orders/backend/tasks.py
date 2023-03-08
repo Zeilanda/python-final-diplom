@@ -11,7 +11,7 @@ from celery import shared_task
 @shared_task()
 def new_user_registered(user_id, **kwargs):
     """
-    отправляем письмо с подтверждением почты
+    Отправляем письмо с подтверждением почты
     """
     logging.warning('Registered start')
     print('Registered start!!!')
@@ -39,7 +39,7 @@ def new_user_registered(user_id, **kwargs):
 @shared_task()
 def new_order_created(order_id, address, **kwargs):
     """
-    отправляем письмо с подтрердждением заказа
+    Отправляем письмо с подтверждением заказа
     """
     # send an e-mail to the user
     token, _ = ConfirmOrderToken.objects.get_or_create(order_id=order_id, address=address)

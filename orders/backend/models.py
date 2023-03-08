@@ -70,52 +70,52 @@ class User(AbstractUser):
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
     #
-    # @property
-    # def token(self):
-    #     """
-    #     Позволяет нам получить токен пользователя, вызвав `user.token` вместо
-    #     `user.generate_jwt_token().
-    #
-    #     Декоратор `@property` выше делает это возможным.
-    #     `token` называется «динамическим свойством ».
-    #     """
-    #     return self._generate_jwt_token()
-    #
-    # def get_full_name(self):
-    #     """
-    #     Этот метод требуется Django для таких вещей,
-    #     как обработка электронной почты.
-    #     Обычно это имя и фамилия пользователя.
-    #     Поскольку мы не храним настоящее имя пользователя,
-    #     мы возвращаем его имя пользователя.
-    #     """
-    #     return self.username
-    #
-    # def get_short_name(self):
-    #     """
-    #     Этот метод требуется Django для таких вещей,
-    #     как обработка электронной почты.
-    #     Как правило, это будет имя пользователя.
-    #     Поскольку мы не храним настоящее имя пользователя,
-    #     мы возвращаем его имя пользователя.
-    #     """
-    #     return self.username
-    #
-    # def _generate_jwt_token(self):
-    #     """
-    #     Создает веб-токен JSON, в котором хранится идентификатор
-    #     этого пользователя и срок его действия
-    #     составляет 60 дней в будущем.
-    #     """
-    #     dt = datetime.now() + timedelta(days=60)
-    #     token = jwt.encode({
-    #         'id': self.pk,
-    #         'exp': int(round(dt.timestamp()))
-    #     }, settings.SECRET_KEY, algorithm='HS256')
-    #
-    #     # return token.decode('utf-8')
-    #     # return jwt.decode(token, settings.SECRET_KEY, algorithms="HS256")
-    #     return token
+    @property
+    def token(self):
+        """
+        Позволяет нам получить токен пользователя, вызвав `user.token` вместо
+        `user.generate_jwt_token().
+
+        Декоратор `@property` выше делает это возможным.
+        `token` называется «динамическим свойством ».
+        """
+        return self._generate_jwt_token()
+
+    def get_full_name(self):
+        """
+        Этот метод требуется Django для таких вещей,
+        как обработка электронной почты.
+        Обычно это имя и фамилия пользователя.
+        Поскольку мы не храним настоящее имя пользователя,
+        мы возвращаем его имя пользователя.
+        """
+        return self.username
+
+    def get_short_name(self):
+        """
+        Этот метод требуется Django для таких вещей,
+        как обработка электронной почты.
+        Как правило, это будет имя пользователя.
+        Поскольку мы не храним настоящее имя пользователя,
+        мы возвращаем его имя пользователя.
+        """
+        return self.username
+
+    def _generate_jwt_token(self):
+        """
+        Создает веб-токен JSON, в котором хранится идентификатор
+        этого пользователя и срок его действия
+        составляет 60 дней в будущем.
+        """
+        dt = datetime.now() + timedelta(days=60)
+        token = jwt.encode({
+            'id': self.pk,
+            'exp': int(round(dt.timestamp()))
+        }, settings.SECRET_KEY, algorithm='HS256')
+
+        # return token.decode('utf-8')
+        # return jwt.decode(token, settings.SECRET_KEY, algorithms="HS256")
+        return token
 
 
 class Customer(models.Model):

@@ -15,7 +15,8 @@ from yaml import load as load_yaml, Loader
 from backend.models import Category, Shop, Customer, User, Provider, Parameter, ProductParameter, Product, \
     ConfirmEmailToken, Order, OrderPosition, ConfirmOrderToken
 from backend.serializers import (LoginSerializer, CustomerSerializer, CategorySerializer, ShopSerializer,
-                                 ProviderSerializer, ProductSerializer, OrderSerializer)
+                                 ProviderSerializer, ProductSerializer, OrderSerializer,
+                                 CustomerRegistrationSerializer, ProviderRegistrationSerializer)
 from backend.tasks import new_user_registered, new_order_created
 
 
@@ -27,32 +28,24 @@ class CustomerRegistrationView(RegisterView):
     Для регистрации покупателей
     """
     throttle_classes = [AnonRateThrottle]
-
-    # serializer_class = CustomerCustomRegistrationSerializer
+    serializer_class = CustomerRegistrationSerializer
     #
-    # def get_response_data(self, user):
-    #     # new_user_registered.send(sender=self.__class__, user_id=user.id)
-    #     new_user_registered.delay(user_id=user.id)
-    #
-    #     return {"detail": "Verification e-mail sent."}
-    def post(self, request):
-        serializer = CustomerSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+    def get_response_data(self, user):
+
+        new_user_registered.delay(user_id=user.id)
+        return {"detail": "Verification e-mail sent."}
 
 
-# class ProviderRegistrationView(RegisterView):
-#     """
-#     Для регистрации поставщиков
-#     """
-#     throttle_classes = [AnonRateThrottle]
-#     serializer_class = ProviderCustomRegistrationSerializer
-#
-#     def get_response_data(self, user):
-#         # new_user_registered.send(sender=self.__class__, user_id=user.id)
-#         new_user_registered.delay(user_id=user.id)
-#         return {"detail": "Verification e-mail sent."}
+class ProviderRegistrationView(RegisterView):
+    """
+    Для регистрации поставщиков
+    """
+    throttle_classes = [AnonRateThrottle]
+    serializer_class = ProviderRegistrationSerializer
+
+    def get_response_data(self, user):
+        new_user_registered.delay(user_id=user.id)
+        return {"detail": "Verification e-mail sent."}
 
 
 class ConfirmAccount(APIView):
@@ -119,33 +112,6 @@ class AccountCustomerDetails(APIView):
         print(user_data)
         return Response({'customer_data': customer_data, "user_data": user_data}, status=status.HTTP_200_OK)
 
-    # Редактирование методом POST
-    # def post(self, request, *args, **kwargs):
-    #     if not request.user.is_authenticated:
-    #         return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
-    #     # проверяем обязательные аргументы
-    #
-    #     if 'password' in request.data:
-    #         errors = {}
-    #         # проверяем пароль на сложность
-    #         try:
-    #             validate_password(request.data['password'])
-    #         except Exception as password_error:
-    #             error_array = []
-    #             # noinspection PyTypeChecker
-    #             for item in password_error:
-    #                 error_array.append(item)
-    #             return JsonResponse({'Status': False, 'Errors': {'password': error_array}})
-    #         else:
-    #             request.user.set_password(request.data['password'])
-
-    # проверяем остальные данные
-    # user_serializer = CustomerSerializer(request.user, data=request.data, partial=True)
-    # if user_serializer.is_valid():
-    #     user_serializer.save()
-    #     return JsonResponse({'Status': True})
-    # else:
-    #     return JsonResponse({'Status': False, 'Errors': user_serializer.errors})
 
 
 class AccountProviderDetails(APIView):

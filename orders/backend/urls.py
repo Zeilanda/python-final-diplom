@@ -1,11 +1,11 @@
 from django.urls import path, include
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from backend.views import CustomerRegistrationView, LoginAPIView, \
+from backend.views import CustomerRegistrationView, \
     CategoryView, ShopView, AccountCustomerDetails, AccountProviderDetails, ProviderPriceUpdate, ConfirmAccount, \
-    ProductsViewSet, BasketView, BasketPosition, OrderNew, ConfirmOrder, OrderList, OrderProcessing
+    ProductsViewSet, BasketView, BasketPosition, OrderNew, ConfirmOrder, OrderList, OrderProcessing, \
+    ProviderRegistrationView
 
 router = DefaultRouter()
 router.register('products', ProductsViewSet, basename='product')
@@ -13,11 +13,10 @@ router.register('products', ProductsViewSet, basename='product')
 app_name = "backend"
 urlpatterns = [
     path('registration/customer', CustomerRegistrationView.as_view(), name='register-customer'),
-    # path('registration/provider', ProviderRegistrationView.as_view(), name='register-provider'),
+    path('registration/provider', ProviderRegistrationView.as_view(), name='register-provider'),
     path('user/register/confirm', ConfirmAccount.as_view(), name='user-register-confirm'),
-    # path('login/', LoginAPIView.as_view(), name='user_login'),
     path('login/', TokenObtainPairView.as_view(), name='user_login'),
-    path('api/login/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('login/refresh', TokenRefreshView.as_view(), name='token_refresh'),
     path('customer/details', AccountCustomerDetails.as_view(), name='user-details'),
     path('provider/details', AccountProviderDetails.as_view(), name='provider-details'),
     path('price/update', ProviderPriceUpdate.as_view(), name='price-update'),
